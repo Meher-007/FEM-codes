@@ -1,0 +1,23 @@
+clc
+clear all
+N=11; % No of points needed.
+syms k x
+P(x) = symsum((((-1)^(N+k))*((factorial(N+k))/((factorial(N-k))*((factorial(k))^2)))*(x^k)),k,0,N)
+P(x)==0
+px=vpa(solve(P(x)),15)
+ax=sort(px)
+a=[zeros(N)]
+NN=11; % No of points needed.
+    syms k x
+    E(x) = symsum((((-1)^(NN+k))*((factorial(NN+k))/((factorial(NN-k))*((factorial(k))^2)))*(x^k)),k,0,NN)
+diff(E(x),1)
+for i=1:N %Rows
+    for j=1:N %Columns
+        if i~=j
+            a(i,j)=a(i,j)+((subs((diff(E(x),1)),x,ax(i)))/((ax(i)-ax(j))*(subs(diff(E(x),1),x,ax(j)))))
+        else
+            a(i,j)=a(i,j)+((1-2*ax(j))/(2*ax(j)*(ax(j)-1)))
+        end
+    end
+end
+vpa(a,9)
