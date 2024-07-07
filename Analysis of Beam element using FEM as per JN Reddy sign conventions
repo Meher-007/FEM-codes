@@ -1,0 +1,97 @@
+% Stiffness Matrix Formation for the Beam Element.
+%sign conventions as per JN reddy.
+
+clear
+clc
+EI=[1 1 1 1]; %Flexural rigidity of the each beam from the left side.(N/m2)
+l=[1 1 1 2];  %lenght of beams from the left side. (m)
+n=input('Enter no of gauss points min of "2" for beam'); % no of gauss points
+N=input('Enter no of elements'); % 4 Beam elements for the Problem.
+T=(2*N)+2; %Total Global degree of freedom for Beam element.
+% e=psy function;
+q=[0 0 0 -12]; %UDL on the each element.
+Edof=4;        %elemental degree of freedom also equal to the no of nodes defined in element.
+
+if n==1
+    w=2;
+    e=0;
+else n=2;
+    w=[1 1];
+    e=[-1/sqrt(3) 1/sqrt(3)]; %Gauss points used for the Numerical method.
+end
+
+U=[zeros(T)]; % initialisation and upcoming Assembled stiffness matrix
+C=[zeros(N)]; % connectivity matrix
+
+for i=1:N
+        C(1,i)=i;
+        C(2,i)=2+i;
+        C(3,i)=4+i;
+        C(4,i)=6+i;
+end
+C;
+C
+
+for M=1:N % for N no of elements
+     a=[zeros(Edof)]; % initialisation and upcoming stiffenss matrix of Beam elements.
+  for i=1:4
+    for j=1:4
+       for k=1:n
+           B=[((3/2)*(e(k))) (-(l(M)/4)*((3*e(k))-1)) (-(3/2)*e(k)) (-(l(M)/4)*((3*e(k))+(1)))]; % d2n/de2,d2n/de2......
+           a(i,j)=a(i,j)+(EI(M)*B(i)*B(j)*((l(M)/2)^(-3))*w(k));
+        end
+     end
+  end
+  U(C(M,:),C(M,:))=a+U(C(M,:),C(M,:));
+ end
+U;
+
+%Applying the force boundary conditions.
+P=zeros(1,T);             % Force Boundary Conditions(Nodal Force Vector)(UDL)
+G=[0 0 -1 0 0 0 0 0 0 0]; %point load acting on the Global nodes.
+for i=1:N
+   for j=1:Edof,O=[(q(i)*l(i))/2 -(q(i)*(l(i)^(2))/12) (q(i)*l(i))/2 (q(i)*(l(i)^(2))/12)];
+       O(j);
+   end
+    P(C(i,:))=O+P(C(i,:));
+end
+P;
+% Combined load vector due to UDL and Point loads.
+I=P+G;
+
+
+ D1=0,D2=0,D5=0,D7=0,D9=0;
+ H=U([3:4 6 8 10],[3:4 6 8 10])
+ E=[I(3) I(4) I(6) I(8) I(10)]'    %force vector after applying boundary conditions to the assembled stiffness matrix 
+ Z=inv(H)*E;
+ D=[D1 D2 Z(1) Z(2) D5 Z(3) D7 Z(4) D9 Z(5)];
+ D
+
+ % SF=[1-(3*((x(y)/l(i))^2))+(2*((x(y)/l(i))^3)) -x(y)*(1-((x(y)/l(i))^3)) 3*((x(y)/l(i))^2)-(2*((x(y)/l(i))^3)) -x(y)*(((x(y)/l(i))^2)-(x(y)/l(i)))];
+ 
+%  CL=zeros(1,N+1);  %Cumulative length in the vector of the elements
+%  for i=1:N+1
+%      syms K
+%      F1=symsum(l(K),K,1:N)
+%      CL(i)=F1
+%  end
+%  CL
+%    
+CL=[0 1 2 3 5]
+
+       %This loop gives us the deflection profile of the Beam Problem.
+ for i=1:N  
+     hold on
+      x=0:0.01:l(i);
+      p=CL(i):0.01:CL(i+1);
+      z=D(C(i,:));
+      w=zeros(1,length(x)); %deflection vector over the element.
+   for y=1:length(x)
+       for j=1:Edof
+         SF=[1-(3*((x(y)/l(i))^2))+(2*((x(y)/l(i))^3)) -x(y)*(1-((x(y)/l(i))^2)) (3*((x(y)/l(i))^2))-(2*((x(y)/l(i))^3)) -x(y)*(((x(y)/l(i))^2)-(x(y)/l(i)))];
+         w(y)=w(y)+(z(j)*SF(j));
+       end
+   end
+   plot(p,w)
+   hold off
+ end
